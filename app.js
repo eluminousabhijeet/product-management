@@ -60,10 +60,10 @@ app.use(checkUserType);
 
 // Bring in the user routes
 const usersRoute = require('./routes/users');
-app.use('/users', usersRoute);
+app.use('/user', usersRoute);
 
 const adminRoute = require('./routes/admin');
-app.use('/', adminRoute);
+app.use('/admin', adminRoute);
 
 const productRoute = require('./routes/products');
 app.use('/products', productRoute);

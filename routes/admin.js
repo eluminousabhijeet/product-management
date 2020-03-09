@@ -8,7 +8,7 @@ const config = require('../config/database');
 const Product = require('../models/Product');
 
 
-router.post('/admin/signup', (req, res) => {
+router.post('/signup', (req, res) => {
     let newAdmin = new Admin({
         firstname: req.body.firstname,
         lastname: req.body.lastname,
@@ -30,14 +30,14 @@ router.post('/admin/signup', (req, res) => {
             });
         } else {
             return res.json({
-                success: true,
+                success: "true",
                 message: "Admin registration is successful."
             });
         }
     });
 });
 
-router.post('/admin/signin', (req, res) => {
+router.post('/signin', (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
@@ -57,11 +57,13 @@ router.post('/admin/signin', (req, res) => {
                     type: "admin",
                     data: {
                         _id: admin._id,
+                        firstname: admin.firstname,
+                        lastname: admin.lastname,
                         username: admin.username,
-                        name: admin.name,
                         email: admin.email,
                         contact: admin.contact,
-                        job_profile: admin.job_profile
+                        gender: admin.gender,
+                        role: admin.role,
                     }
                 }, config.secret, {
                     expiresIn: 604800 // for 1 week time in milliseconds
@@ -80,19 +82,49 @@ router.post('/admin/signin', (req, res) => {
     });
 });
 
-router.get('/admin/user-listing', async (req, res) => {
+router.get('/user-listing', passport.authenticate('jwt', { session: false }), async (req, res) => {
     try {
         const users = await User.find();
-        return res.json(
-            users
-        );
+        return res.json({
+            users: users
+        });
     } catch (err) {
         console.log(err);
         res.json({ message: 'err' });
     }
 });
 
-router.get('/admin/profile', passport.authenticate('jwt', {
+router.post('/add-user', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    let newUser = new User({
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
+        email: req.body.email,
+        username: req.body.username,
+        contact: req.body.contact,
+        gender: req.body.gender,
+        role: req.body.role,
+        password: req.body.password
+    });
+    User.addUser(newUser, (err, user) => {
+        if (err) {
+            let message = "";
+            if (err.errors.username) message = "Username is already taken. ";
+            if (err.errors.email) message += "Email already exists.";
+            return res.json({
+                array: req.body,
+                success: "false",
+                message
+            });
+        } else {
+            return res.json({
+                success: "true",
+                message: "User added is successfully."
+            });
+        }
+    });
+});
+
+router.get('/profile', passport.authenticate('jwt', {
     session: false
 }), (req, res) => {
     // console.log(req.user);
