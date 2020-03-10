@@ -43,42 +43,78 @@ router.post('/signin', (req, res) => {
 
     Admin.getAdminByUsername(username, (err, admin) => {
         if (err) throw err;
-        if (!admin) {
-            return res.json({
-                success: false,
-                message: "Authentication failed."
+        if (admin) {
+            Admin.comparePassword(password, admin.password, (err, isMatch) => {
+                if (err) throw err;
+                if (isMatch) {
+                    const token = jwt.sign({
+                        type: "admin",
+                        data: {
+                            _id: admin._id,
+                            firstname: admin.firstname,
+                            lastname: admin.lastname,
+                            username: admin.username,
+                            email: admin.email,
+                            contact: admin.contact,
+                            gender: admin.gender,
+                            role: admin.role,
+                        }
+                    }, config.secret, {
+                        expiresIn: 604800 // for 1 week time in milliseconds
+                    });
+                    return res.json({
+                        success: "true",
+                        token: "JWT " + token
+                    });
+                } else {
+                    return res.json({
+                        success: 'false',
+                        message: 'Authentication failed.'
+                    })
+                }
             });
         }
-
-        Admin.comparePassword(password, admin.password, (err, isMatch) => {
-            if (err) throw err;
-            if (isMatch) {
-                const token = jwt.sign({
-                    type: "admin",
-                    data: {
-                        _id: admin._id,
-                        firstname: admin.firstname,
-                        lastname: admin.lastname,
-                        username: admin.username,
-                        email: admin.email,
-                        contact: admin.contact,
-                        gender: admin.gender,
-                        role: admin.role,
+    });
+    User.getUserByUsername(username, (err, user) => {
+        if (err) throw err;
+        if (user) {
+            if(user.role == 'admin'){
+                User.comparePassword(password, user.password, (err, isMatch) => {
+                    if (err) throw err;
+                    if (isMatch) {
+                        const token = jwt.sign({
+                            type: "admin",
+                            data: {
+                                _id: user._id,
+                                firstname: user.firstname,
+                                lastname: user.lastname,
+                                username: user.username,
+                                email: user.email,
+                                contact: user.contact,
+                                gender: user.gender,
+                                role: user.role,
+                            }
+                        }, config.secret, {
+                            expiresIn: 604800 // for 1 week time in milliseconds
+                        });
+                        return res.json({
+                            success: "true",
+                            token: "JWT " + token
+                        });
+                    } else {
+                        return res.json({
+                            success: 'false',
+                            message: 'Authentication failed.'
+                        })
                     }
-                }, config.secret, {
-                    expiresIn: 604800 // for 1 week time in milliseconds
-                });
-                return res.json({
-                    success: "true",
-                    token: "JWT " + token
                 });
             } else {
                 return res.json({
-                    success: "false",
-                    message: "Authentication failed."
-                });
+                    success: 'false',
+                    message: 'Authentication failed.'
+                })
             }
-        });
+        }
     });
 });
 
