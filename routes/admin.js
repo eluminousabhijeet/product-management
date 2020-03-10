@@ -124,13 +124,62 @@ router.post('/add-user', passport.authenticate('jwt', { session: false }), async
     });
 });
 
-router.get('/profile', passport.authenticate('jwt', {
-    session: false
-}), (req, res) => {
-    // console.log(req.user);
-    return res.json(
-        req.user
-    );
+router.post('/add-product', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    let newProduct = new Product({
+        type: req.body.type,
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        stalk: req.body.stalk,
+        image: req.body.image
+    });
+    try {
+        await product.save();
+        res.status(200).json({
+            success: "true",
+            message: 'Product added successfully.'
+        });
+    } catch (err) {
+        res.json({ 
+            success: "false",
+            message: err
+         });
+    }
+});
+
+router.post('/check-username', (req, res) => {
+    const username = req.body.username;
+    User.getUserByUsername(username, (err, user) => {
+        if (err) throw err;
+        if (user) {
+            console.log('user exist');
+            return res.json({
+                success: "false",
+                message: "Username is already taken."
+            });
+        } else {
+            return res.json({
+                success: "true"
+            });
+        }
+    });
+});
+
+router.post('/check-email', (req, res) => {
+    const email = req.body.email;
+    User.getUserByEmail(email, (err, user) => {
+        if (err) throw err;
+        if (user) {
+            return res.json({
+                success: "false",
+                message: "Email is already taken."
+            });
+        } else {
+            return res.json({
+                success: "true"
+            });
+        }
+    });
 });
 
 router.get('/add-product',  async (req, res, next) => {

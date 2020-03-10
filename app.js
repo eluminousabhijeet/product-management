@@ -37,6 +37,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // BodyParser Middleware
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  limit: "50mb",
+  parameterLimit: 100000,
+  extended: true
+}));
+app.use(bodyParser.json({limit: "50mb", extended: true}));
 // Passport Middleware
 app.use(passport.initialize());
 app.use(passport.session());
