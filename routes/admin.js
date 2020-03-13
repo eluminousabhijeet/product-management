@@ -26,7 +26,7 @@ router.post('/signup', (req, res) => {
             if (err.errors.email) message += "Email already exists.";
             return res.json({
                 success: false,
-                message
+                message: err
             });
         } else {
             return res.json({
@@ -78,7 +78,7 @@ router.post('/signin', (req, res) => {
     User.getUserByUsername(username, (err, user) => {
         if (err) throw err;
         if (user) {
-            if(user.role == 'admin'){
+            if (user.role == 'admin') {
                 User.comparePassword(password, user.password, (err, isMatch) => {
                     if (err) throw err;
                     if (isMatch) {
@@ -118,17 +118,57 @@ router.post('/signin', (req, res) => {
     });
 });
 
-router.get('/user-listing', passport.authenticate('jwt', { session: false }), async (req, res) => {
+// router.get('/user-listing', passport.authenticate('jwt', { session: false }), async (req, res) => {
+//     try {
+//         const users = await User.find();
+//         return res.json({
+//             users: users
+//         });
+//     } catch (err) {
+//         console.log(err);
+//         res.json({ message: 'err' });
+//     }
+// });
+
+router.get('/user-listing', async (req, res) => {
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    const startIndex = parseInt(req.query.start);
+    const endIndex = page * limit;
+
     try {
         const users = await User.find();
+
+        const results = {};
+
+        if (startIndex > 0) {
+            results.previous = {
+                page: page - 1,
+                limit: limit,
+            }
+        }
+
+        if (endIndex < users.length) {
+            results.next = {
+                page: page + 1,
+                limit: limit,
+            }
+        }
+
+        results.result = users.slice(startIndex, endIndex);
+        results.total = users.length;
         return res.json({
-            users: users
+            users: results
         });
     } catch (err) {
         console.log(err);
         res.json({ message: 'err' });
     }
 });
+
+router.get('/delete-user', async (req, res) => {
+    
+})
 
 router.post('/add-user', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let newUser = new User({
@@ -176,10 +216,10 @@ router.post('/add-product', passport.authenticate('jwt', { session: false }), as
             message: 'Product added successfully.'
         });
     } catch (err) {
-        res.json({ 
+        res.json({
             success: "false",
             message: err
-         });
+        });
     }
 });
 
@@ -218,7 +258,7 @@ router.post('/check-email', (req, res) => {
     });
 });
 
-router.get('/add-product',  async (req, res, next) => {
+router.get('/add-product', async (req, res, next) => {
     // return res.json({
     //     message: "fdfdsfsd"
     // });
