@@ -15,7 +15,8 @@ router.post('/signup', (req, res) => {
         contact: req.body.contact,
         gender: req.body.gender,
         role: req.body.role,
-        password: req.body.password
+        password: req.body.password,
+        status: req.body.status
     });
     User.addUser(newUser, (err, user) => {
         if (err) {
@@ -59,7 +60,10 @@ router.post('/signin', (req, res) => {
                         username: user.username,
                         name: user.name,
                         email: user.email,
-                        contact: user.contact
+                        contact: user.contact,
+                        gender: user.gender,
+                        role: user.role,
+                        status: user.role
                     }
                 }, config.secret, {
                     expiresIn: 604800 // for 1 week time in milliseconds

@@ -73,47 +73,11 @@ router.post('/signin', (req, res) => {
                     })
                 }
             });
-        }
-    });
-    User.getUserByUsername(username, (err, user) => {
-        if (err) throw err;
-        if (user) {
-            if (user.role == 'admin') {
-                User.comparePassword(password, user.password, (err, isMatch) => {
-                    if (err) throw err;
-                    if (isMatch) {
-                        const token = jwt.sign({
-                            type: "admin",
-                            data: {
-                                _id: user._id,
-                                firstname: user.firstname,
-                                lastname: user.lastname,
-                                username: user.username,
-                                email: user.email,
-                                contact: user.contact,
-                                gender: user.gender,
-                                role: user.role,
-                            }
-                        }, config.secret, {
-                            expiresIn: 604800 // for 1 week time in milliseconds
-                        });
-                        return res.json({
-                            success: "true",
-                            token: "JWT " + token
-                        });
-                    } else {
-                        return res.json({
-                            success: 'false',
-                            message: 'Authentication failed.'
-                        })
-                    }
-                });
-            } else {
-                return res.json({
-                    success: 'false',
-                    message: 'Authentication failed.'
-                })
-            }
+        }else {
+            return res.json({
+                success: 'false',
+                message: 'Authentication failed.'
+            })
         }
     });
 });
@@ -137,7 +101,7 @@ router.get('/user-listing', async (req, res) => {
     const endIndex = page * limit;
 
     try {
-        const users = await User.find();
+        const users = await User.find({status: "active"});
 
         const results = {};
 
@@ -166,9 +130,14 @@ router.get('/user-listing', async (req, res) => {
     }
 });
 
-router.get('/delete-user', async (req, res) => {
-    
-})
+// router.delete('/delete-user/:userId', async (req, res) => {
+//     try {
+//         const removedUser = await User.remove({ _id: req.params.userId });
+//         res.json(removedUser);
+//     } catch (err) {
+//         res.json({ message: err })
+//     }
+// })
 
 router.post('/add-user', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let newUser = new User({
@@ -179,7 +148,8 @@ router.post('/add-user', passport.authenticate('jwt', { session: false }), async
         contact: req.body.contact,
         gender: req.body.gender,
         role: req.body.role,
-        password: req.body.password
+        password: req.body.password,
+        status: req.body.status
     });
     User.addUser(newUser, (err, user) => {
         if (err) {
@@ -199,6 +169,24 @@ router.post('/add-user', passport.authenticate('jwt', { session: false }), async
         }
     });
 });
+
+
+//UPDATE SPECIFIC POST
+router.patch('/delete-user/:userId', async (req, res) => {
+    try {
+        const updatedUser = await User.updateOne(
+            { _id: req.params.userId },
+            {
+                $set: {
+                    status: 'inactive',
+                }
+            });
+        res.json(updatedUser);
+    } catch (err) {
+        res.json({ message: err })
+    }
+});
+
 
 router.post('/add-product', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let newProduct = new Product({

@@ -39,6 +39,10 @@ const UserSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    status:{
+        type: String,
+        require: true
+    },
 });
 
 UserSchema.plugin(uniqueValidator);
