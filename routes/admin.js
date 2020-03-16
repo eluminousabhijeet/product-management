@@ -170,6 +170,31 @@ router.post('/add-user', passport.authenticate('jwt', { session: false }), async
     });
 });
 
+// Update User
+router.patch('/update-user/:userId', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        const updatedUser = await User.updateOne(
+            { _id: req.params.userId },
+            {
+                $set: {
+                    firstname: req.body.firstname,
+                    lastname: req.body.lastname,
+                    username: req.body.username,
+                    email: req.body.email,
+                    contact: req.body.contact,
+                    gender: req.body.gender,
+                    role: req.body.role
+                }
+            });
+        res.json({
+            success: "true",
+            message: "User updated successfully"
+        });
+    } catch (err) {
+        res.json({ message: err })
+    }
+});
+
 
 //UPDATE SPECIFIC POST
 router.patch('/delete-user/:userId', async (req, res) => {
