@@ -4,6 +4,8 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const config = require('../config/database');
+const Products = require('../models/Product');
+const Orders = require('../models/Order');
 
 
 router.post('/signup', (req, res) => {
@@ -80,6 +82,64 @@ router.post('/signin', (req, res) => {
                 });
             }
         });
+    });
+});
+
+
+router.get('/product-listing', async (req, res) => {
+    try {
+        const products = await Products.find({ status: "active" });
+        return res.json({
+            success: "true",
+            products: products
+        });
+    } catch (err) {
+        console.log(err);
+        res.json({ message: 'err' });
+    }
+});
+
+router.get('/user-data/:userId', async (req, res) => {
+    try {
+        const userdata = await User.find({ _id: req.params.userId });
+        return res.json({
+            success: "true",
+            userdata: userdata
+        });
+    } catch (err) {
+        res.json({ message: 'err' });
+    }
+});
+
+router.post('/place-order', async (req, res) => {
+    let newOrder = new Orders({
+        productId: req.body.productId,
+        quantity: req.body.quantity,
+        userId: req.body.userId,
+        shippingName: req.body.shippingName,
+        shippingAddress: req.body.shippingAddress,
+        shippingPostcode: req.body.shippingPostcode,
+        shippingCountry: req.body.shippingCountry,
+        shippingState: req.body.shippingState,
+        shippingCity: req.body.shippingCity,
+        totalCost: req.body.totalCost,
+        createdOn: req.body.createdOn,
+        status: req.body.status
+    });
+    Orders.addOrder(newOrder, (err, order) => {
+        if (err) {
+            let message = "Error occured.";
+            return res.json({
+                array: req.body,
+                success: "false",
+                message
+            });
+        } else {
+            return res.json({
+                success: "true",
+                message: "Order placed successfully."
+            });
+        }
     });
 });
 

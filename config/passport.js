@@ -17,13 +17,13 @@ module.exports = (userType, passport) => {
                 return done(null, false);
             });
         } 
-        if(userType == "product"){
-            Admin.getAdminById(jwt_payload.data._id, (err, user) => {
-                if (err) return done(err, false);
-                if (user) return done(null, user);
-                return done(null, false);
-            });
-        }
+        // if(userType == "product"){
+        //     Admin.getAdminById(jwt_payload.data._id, (err, user) => {
+        //         if (err) return done(err, false);
+        //         if (user) return done(null, user);
+        //         return done(null, false);
+        //     });
+        // }
         if (userType == 'users') {
             User.getUserById(jwt_payload.data._id, (err, user) => {
                 if (err) return done(err, false);
