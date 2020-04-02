@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
@@ -10,6 +11,7 @@ const Orders = require('../models/Order');
 
 router.post('/signup', (req, res) => {
     let newUser = new User({
+        _id: new mongoose.Types.ObjectId(),
         firstname: req.body.firstname,
         lastname: req.body.lastname,
         email: req.body.email,
@@ -88,7 +90,7 @@ router.post('/signin', (req, res) => {
 
 router.get('/product-listing', async (req, res) => {
     try {
-        const products = await Products.find({ status: "active" });
+        const products = await Products.find({ status: "active" }).populate('categoryId');
         return res.json({
             success: "true",
             products: products
@@ -112,35 +114,78 @@ router.get('/user-data/:userId', async (req, res) => {
 });
 
 router.post('/place-order', async (req, res) => {
-    let newOrder = new Orders({
-        productId: req.body.productId,
-        quantity: req.body.quantity,
-        userId: req.body.userId,
-        shippingName: req.body.shippingName,
-        shippingAddress: req.body.shippingAddress,
-        shippingPostcode: req.body.shippingPostcode,
-        shippingCountry: req.body.shippingCountry,
-        shippingState: req.body.shippingState,
-        shippingCity: req.body.shippingCity,
-        totalCost: req.body.totalCost,
-        createdOn: req.body.createdOn,
-        status: req.body.status
-    });
-    Orders.addOrder(newOrder, (err, order) => {
-        if (err) {
-            let message = "Error occured.";
-            return res.json({
-                array: req.body,
-                success: "false",
-                message
+    Products.findById(req.body.productId)
+        .then(product => {
+            if (!product) {
+                return res.status(404).json({
+                    message: "Product not found"
+                })
+            }
+            let newOrder = new Orders({
+                _id: mongoose.Types.ObjectId(),
+                productId: req.body.productId,
+                quantity: req.body.quantity,
+                userId: req.body.userId,
+                shippingName: req.body.shippingName,
+                shippingAddress: req.body.shippingAddress,
+                shippingPostcode: req.body.shippingPostcode,
+                shippingCountry: req.body.shippingCountry,
+                shippingState: req.body.shippingState,
+                shippingCity: req.body.shippingCity,
+                totalCost: req.body.totalCost,
+                createdOn: req.body.createdOn,
+                status: req.body.status
             });
-        } else {
-            return res.json({
-                success: "true",
-                message: "Order placed successfully."
+            Orders.addOrder(newOrder, (err, order) => {
+                if (err) {
+                    let message = "Error occured.";
+                    return res.json({
+                        array: req.body,
+                        success: "false",
+                        message
+                    });
+                } else {
+                    return res.json({
+                        success: "true",
+                        message: "Order placed successfully."
+                    });
+                }
             });
-        }
-    });
+        })
+        .catch(err => {
+            return res.status(500).json({
+                message: "Product not found",
+                error: err
+            })
+        })
+});
+
+router.get('/order-listing/:userId', async (req, res) => {
+    try {
+        const orders = await Orders.find({ userId: req.params.userId, status: "active" }).populate('productId').sort({createdOn: 'desc'});
+
+        return res.json({
+            success: "true",
+            orders: orders
+        });
+    } catch (err) {
+        console.log(err);
+        res.json({ message: 'err' });
+    }
+});
+
+router.get('/product-data/:productSlug', async (req, res) => {
+    try {
+        const productData = await Products.find({ slug: req.params.productSlug });
+
+        return res.json({
+            success: "true",
+            productData: productData
+        });
+    } catch (err) {
+        console.log(err);
+        res.json({ message: 'err' });
+    }
 });
 
 /**

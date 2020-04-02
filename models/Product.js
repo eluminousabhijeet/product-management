@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const ProductSchema = mongoose.Schema({
+    _id: mongoose.Schema.Types.ObjectId,
     name: {
         type: String,
         require: true,
@@ -22,10 +23,12 @@ const ProductSchema = mongoose.Schema({
         type: String,
         require: true
     },
-    category: {
+    slug: {
         type: String,
-        require: true
+        require: true,
+        unique: true
     },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     status: {
         type: String,
         require: true

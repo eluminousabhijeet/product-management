@@ -4,6 +4,7 @@ const uniqueValidator = require('mongoose-unique-validator');
 
 // Admin Schema
 const AdminSchema = mongoose.Schema({
+    _id: mongoose.Schema.Types.ObjectId,
     firstname: {
         type: String,
         required: true

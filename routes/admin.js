@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
@@ -7,10 +8,12 @@ const User = require('../models/User');
 const config = require('../config/database');
 const Products = require('../models/Product');
 const Category = require('../models/ProductCategory');
+const Orders = require('../models/Order');
 
 
 router.post('/signup', (req, res) => {
     let newAdmin = new Admin({
+        _id: new mongoose.Types.ObjectId(),
         firstname: req.body.firstname,
         lastname: req.body.lastname,
         email: req.body.email,
@@ -142,6 +145,7 @@ router.get('/user-listing', async (req, res) => {
 
 router.post('/add-user', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let newUser = new User({
+        _id: new mongoose.Types.ObjectId(),
         firstname: req.body.firstname,
         lastname: req.body.lastname,
         email: req.body.email,
@@ -256,7 +260,7 @@ router.get('/product-listing', async (req, res) => {
     const endIndex = page * limit;
 
     try {
-        const products = await Products.find({ status: "active" });
+        const products = await Products.find({ status: "active" }).populate('categoryId');
 
         const results = {};
 
@@ -287,12 +291,14 @@ router.get('/product-listing', async (req, res) => {
 
 router.post('/add-product', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let newProduct = new Products({
-        category: req.body.category,
+        _id: new mongoose.Types.ObjectId(),
+        categoryId: req.body.category,
         name: req.body.name,
         description: req.body.description,
         price: req.body.price,
         stock: req.body.stock,
         image: req.body.image,
+        slug: req.body.slug,
         status: req.body.status
     });
     const name = req.body.name;
@@ -364,10 +370,10 @@ router.patch('/update-product/:productId', passport.authenticate('jwt', { sessio
         }
 
     } catch (err) {
-        res.json({ 
+        res.json({
             success: 'false',
             message: err
-         })
+        })
     }
 });
 
@@ -389,6 +395,7 @@ router.patch('/delete-product/:productId', passport.authenticate('jwt', { sessio
 
 router.post('/product-category', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let category = new Category({
+        _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         status: req.body.status
     });
@@ -456,6 +463,43 @@ router.delete('/product/:productId', passport.authenticate('jwt', { session: fal
         res.json(removedProduct);
     } catch (err) {
         res.json({ message: err })
+    }
+});
+
+router.get('/order-listing', async (req, res) => {
+
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    const startIndex = parseInt(req.query.start);
+    const endIndex = page * limit;
+
+    try {
+        const orders = await Orders.find({ status: "active" }).populate('productId userId').sort({createdOn: 'desc'});
+
+        const results = {};
+
+        if (startIndex > 0) {
+            results.previous = {
+                page: page - 1,
+                limit: limit,
+            }
+        }
+
+        if (endIndex < orders.length) {
+            results.next = {
+                page: page + 1,
+                limit: limit,
+            }
+        }
+
+        results.result = orders.slice(startIndex, endIndex);
+        results.total = orders.length;
+        return res.json({
+            orders: results
+        });
+    } catch (err) {
+        console.log(err);
+        res.json({ message: 'err' });
     }
 });
 
